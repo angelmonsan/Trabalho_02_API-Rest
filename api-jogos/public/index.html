@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loja de Jogos</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #eef2f7, #ffffff);
+    }
+
+    header {
+      background: #1976d2;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .form {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      min-width: 180px;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-add {
+      background: #4caf50;
+      color: white;
+    }
+
+    .btn-add:hover {
+      background: #388e3c;
+    }
+
+    .btn-clear {
+      background: #e53935;
+      color: white;
+    }
+
+    .btn-clear:hover {
+      background: #c62828;
+    }
+
+    #lista {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card h2 {
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: #555;
+    }
+
+    .btn-delete {
+      margin-top: 10px;
+      width: 100%;
+      background: #e53935;
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background: #c62828;
+    }
+
+    .empty {
+      text-align: center;
+      font-size: 18px;
+      color: #777;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>Loja de Jogos</header>
+
+<div class="form">
+  <input id="titulo" placeholder="Nome do jogo">
+  <input id="descricao" placeholder="Descrição">
+  <button class="btn-add" onclick="adicionar()">Adicionar</button>
+  <button class="btn-clear" onclick="limparTudo()">Limpar Tudo</button>
+</div>
+
+<div id="lista"></div>
+
+<script>
+
+// CARREGAR
+function carregar() {
+  fetch('/games')
+    .then(res => res.json())
+    .then(data => {
+      const lista = document.getElementById('lista');
+      lista.innerHTML = '';
+
+      if (data.length === 0) {
+        lista.innerHTML = "<p class='empty'>Nenhum jogo cadastrado</p>";
+        return;
+      }
+
+      data.forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+          <h2>${game.titulo}</h2>
+          <p>${game.descricao}</p>
+          <button class="btn-delete" onclick="deletar(${game.id})">Excluir</button>
+        `;
+
+        lista.appendChild(card);
+      });
+    })
+    .catch(() => {
+      document.getElementById('lista').innerHTML =
+        "<p class='empty'>Erro ao carregar dados</p>";
+    });
+}
+
+// ADICIONAR
+function adicionar() {
+  const titulo = document.getElementById('titulo').value.trim();
+  const descricao = document.getElementById('descricao').value.trim();
+
+  if (!titulo) {
+    alert("Digite o nome do jogo!");
+    return;
+  }
+
+  fetch('/games', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ titulo, descricao })
+  })
+  .then(() => {
+    document.getElementById('titulo').value = '';
+    document.getElementById('descricao').value = '';
+    carregar();
+  })
+  .catch(() => alert("Erro ao adicionar"));
+}
+
+// DELETAR
+function deletar(id) {
+  fetch(`/games/${id}`, { method: 'DELETE' })
+    .then(() => carregar())
+    .catch(() => alert("Erro ao deletar"));
+}
+
+// LIMPAR
+function limparTudo() {
+  if (!confirm("Deseja apagar todos os jogos?")) return;
+
+  fetch('/games', { method: 'DELETE' })
+    .then(() => carregar())
+    .catch(() => alert("Erro ao limpar"));
+}
+
+// INICIAR
+carregar();
+
+</script>
+
+</body>
+</html>
